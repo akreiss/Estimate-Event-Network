@@ -100,12 +100,14 @@ LL_MLE <- function(mu_init,t_0,h,events,covariates,T,par=FALSE,iterlim=100,gradt
 ## Computes a parametric estimator in the model, i.e., it is supposed that the parameter 
 ## function is a constant and the constant is estimated.
 #### Input ####
-## The options for this function have the same meaning as for MLE.
+## The options for this function have the same meaning as for MLE. But
+## T0 - The parametric MLE is computed on the interval [T0,T], by 
+##      default it is T0=0.
 #### Output ####
 ## A list with the same elements as for MLE. But each element has only one
 ## entry which corresponds to the one estimate.
-parametric_MLE <- function(mu_init,events,covariates,T,par=FALSE,iterlim=100,gradtol=0.000001) {
-  res <- MLE(mu_init,T/2,T/2,events,covariates,T,K=Kuniform,KIntegrate = KuniformIntegrate,par=par,iterlim=iterlim,gradtol=gradtol)
+parametric_MLE <- function(mu_init,events,covariates,T,T0=0,par=FALSE,iterlim=100,gradtol=0.000001) {
+  res <- MLE(mu_init,(T0+T)/2,(T-T0)/2,events,covariates,T,K=Kuniform,KIntegrate = KuniformIntegrate,par=par,iterlim=iterlim,gradtol=gradtol)
   return(list(estimate=res$estimates[1,],hessian=res$hessians[[1]],code=res$codes[[1]]))
 }
 
@@ -381,7 +383,8 @@ graph_from_events <- function(events,t0,t1,n) {
 ## to this function. In Priciple it does not matter for which time points t0 was called.
 ## However, the quality of the estimation of the interals is probably better if MLE was
 ## called on a finer vector t0. The output of MLE is the non-parametric estimator and
-## the result of parametric_MLE is the parametric estimator to which it is compared.
+## the result of parametric_MLE is the parametric estimator to which it is compared. The
+## comparison is made on the interval spanned by est$t_0.
 ##### Input ####
 ## est        - Result of the function MLE => Nonparametric Estimator
 ## param_est  - Result of the function parametric_MLE => Parametric Estimator
@@ -404,6 +407,9 @@ graph_from_events <- function(events,t0,t1,n) {
 ## Tn_scaled - Centred and scaled test statistic, under H0 this is N(0,1) distributed
 L2_test_statistic <- function(est,param_est,covariates,events,h,Kf=K,wf=standard_weight,Kfour=151/630,Delta=1) {
   ## Some useful variables
+  ## Set end time
+  T <- max(est$t_0)
+  
   ## Setup Grid for Integral Approximations
   grid <- seq(from=est$t_0[1],to=ceiling(T/Delta)*Delta,by=Delta)
   
